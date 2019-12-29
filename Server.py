@@ -140,10 +140,22 @@ class Client():
 
                 splitted_msg = msg.split()
 
-                # We do not want to keep the logs
-                if splitted_msg[0] in ['TA']:
+                # Z is used to indicate message deletion so let's echo with a different function
+                # Deletion messages are treated differently from normal messages
+                # We don't keep track of them, and they must erase their log from the server
+                # So we call a different function to deal with them
+                if splitted_msg[0] == 'Z' or splitted_msg[0] == 'E':
+                    self.echoes_delete(msg,splitted_msg)
+                    continue
+                # Here we have the drag messages
+                elif splitted_msg[0] == 'DR':
+                    self.update_position_in_logs(splitted_msg)
                     self.echoesAct3(msg)
                     continue
+
+                elif splitted_msg[0] in ['O', 'C', 'L', 'R', 'S', 'E', 'D', 'Z', 'T']:
+                    self.echoes(msg)
+
             # We pass the Connection Reset Error since the pinger will deal with it more effectivelly
             except ConnectionResetError:
                 pass
@@ -157,6 +169,54 @@ class Client():
         msg = msg.encode('ISO-8859-1')
         for client in Clients:
             client.connexion.sendall(msg)
+
+    # Here we echo messages to all members of the network
+    # Keep a dictionary of the messages to send it to new users
+    # Update the message number for every message send
+    def echoes(self, msg):
+        msg = msg + " " + "m" + str(Client.MessageID)
+        # We need to keep logs of all drawing messages to redraw them on new arriving clients
+        Logs["m" + str(Client.MessageID)] = msg.encode('ISO-8859-1') + " Ø".encode('ISO-8859-1')
+        Client.MessageID = Client.MessageID + 1
+        # We do not want to log some types of messages. For instance like permission messages
+        self.echoesAct3(msg)
+
+    # Here we echo delete messages
+    # We need to remove them from the message log
+    # And finally echo the message to all members of the server
+    def echoes_delete(self, msg, splitMsg):
+        try:
+            Logs.pop(splitMsg[1])
+        except KeyError:
+            pass
+        self.echoesAct3(msg)
+
+    # Here we update the position of a draged object in the server
+    def update_position_in_logs(self, splitMsg):
+
+        # We retrieve the original message
+        original_message = Logs[splitMsg[1]]
+        original_message = original_message[:-1]
+        original_message = original_message.decode('ISO-8859-1')
+        original_message = original_message.split()
+
+        # Them add to the coordinates according to the drag!
+        # The position of the coordinates of each message is different for different types of message
+        # This requires us to alternate the coordinates differently according to the type
+        if original_message[0] in ['L', 'C', 'O', 'R', 'S', 'D']:
+            original_message[1] = str(int(original_message[1]) + int(splitMsg[2]))
+            original_message[3] = str(int(original_message[3]) + int(splitMsg[2]))
+            original_message[2] = str(int(original_message[2]) + int(splitMsg[3]))
+            original_message[4] = str(int(original_message[4]) + int(splitMsg[3]))
+            original_message = " ".join(original_message)
+        elif original_message[0] in ['T']:
+            original_message[2] = str(int(original_message[2]) + int(splitMsg[2]))
+            original_message[3] = str(int(original_message[3]) + int(splitMsg[3]))
+            original_message = " ".join(original_message)
+
+            # Rewrite the log
+        original_message = original_message + " Ø"
+        Logs[splitMsg[1]] = original_message.encode('ISO-8859-1')
 
 if __name__ == "__main__":
     host = ''

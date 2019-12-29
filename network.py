@@ -28,6 +28,7 @@ class MConnection:
 
             data = self.s.recv(1024).decode()
             UserNames = data.split()
+            print(UserNames)
 
             while True:
                 ExternalWindows.get_nickname_from_user()
@@ -72,7 +73,7 @@ class MConnection:
             if data == "Ø":
                 break
             if data == "ß":
-                print('receive ß')
+                # print('receive ß')
                 continue
             msg = msg + data
         msg = msg.split()

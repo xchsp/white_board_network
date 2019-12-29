@@ -1,5 +1,8 @@
 from tkinter import *
 
+from graphical_widgets import ExternalWindows
+
+
 class Whiteboard:
 
     # Here we initiate with the line drawing tool, this is the tool currently used to draw
@@ -11,7 +14,8 @@ class Whiteboard:
     # Here we initiate the whiteboard by calling all the functions necessary to construct it
     # And also initiate the parent class!
     # We call the save and load and permission classes here, we need them to instantiate the buttons
-    def __init__(self):
+    def __init__(self, connexion):
+        self.my_connexion = connexion
         self._init_whiteboard()
         self._init_item_button()
         # self._init_user_button()
@@ -53,8 +57,8 @@ class Whiteboard:
                command=lambda: self.set_drawing_tool('eraser')).place(x=560, y=0)
         Button(self.myWhiteBoard, text='drag', height=1, width=5, bg='green', font='Arial',
                command=lambda: self.set_drawing_tool('drag')).place(x=630, y=0)
-        # Button(self.myWhiteBoard, text='delALL', height=1, width=5, bg='snow', font='Arial',
-        #        command=self.erase_all).place(x=700, y=0)
+        Button(self.myWhiteBoard, text='delALL', height=1, width=5, bg='snow', font='Arial',
+               command=self.erase_all).place(x=700, y=0)
 
     # This is the own user button, it is used mostly as a display of the user name
     def _init_user_button(self):
@@ -113,6 +117,7 @@ class Whiteboard:
     # It refers to the text functionality of the text button widget on the top
     def get_text_from_user(self):
         self.drawing_tool = 'text'
+        ExternalWindows.get_text_from_user()
 
 
     # ----------------------------- Erase All Function -----------------------------------------------------------------
@@ -122,6 +127,12 @@ class Whiteboard:
     # Since every user is in it's own list of permissions, we only need to check the list of permissions
     # Disconnected users loose their privileges!
     # Them it sends a delete message for every one of them!
+    def erase_all(self):
+        A = self.drawing_area.find_all()
+        for a in A:
+            a = self.drawing_area.gettags(a)
+            msg = ("E",a[1])
+            self.my_connexion.send_message(msg)
 
 if __name__ == '__main__':
     wb = Whiteboard()
